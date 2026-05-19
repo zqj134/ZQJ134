@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生日快乐！</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Arial', sans-serif;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .text-container {
+            position: absolute;
+            z-index: 10;
+            pointer-events: none;
+            text-align: center;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .heart-text {
+            font-size: 24px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #ff6b6b, #ff8e8e, #ffb8b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 30px rgba(255, 107, 107, 0.5);
+            animation: textPulse 1.5s ease-in-out infinite;
+            letter-spacing: 8px;
+            margin-bottom: 20px;
+            transition: all 0.5s ease;
+        }
+
+        .heart-text.switching {
+            animation: textSwitch 0.6s ease-in-out;
+        }
+
+        @keyframes textSwitch {
+            0% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+                filter: blur(0px);
+            }
+            30% {
+                transform: scale(0.8) rotate(-10deg);
+                opacity: 0;
+                filter: blur(5px);
+            }
+            60% {
+                transform: scale(0.8) rotate(10deg);
+                opacity: 0;
+                filter: blur(5px);
+            }
+            100% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+                filter: blur(0px);
+            }
+        }
+
+        @keyframes textPulse {
+            0%, 100% {
+                transform: scale(1);
+                filter: brightness(1);
+            }
+            50% {
+                transform: scale(1.05);
+                filter: brightness(1.2);
+            }
+        }
+
+        .glow {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 107, 107, 0.3) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: glowPulse 1.5s ease-in-out infinite;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        @keyframes glowPulse {
+            0%, 100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0.6;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.2);
+                opacity: 0.8;
+            }
+        }
+
+        .click-button {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            padding: 15px 40px;
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .click-button:hover {
+            transform: translateX(-50%) scale(1.1);
+            box-shadow: 0 6px 25px rgba(255, 107, 107, 0.6);
+        }
+
+        .click-button:active {
+            transform: translateX(-50%) scale(0.95);
+        }
+
+        /* 主弹窗样式 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #2d2d2d, #1a1a1a);
+            padding: 50px 80px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(255, 107, 107, 0.3);
+            border: 2px solid #ff6b6b;
+            animation: scaleIn 0.3s ease;
+            min-width: 450px;
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .modal-text {
+            font-size: 24px;
+            color: #fff;
+            margin-bottom: 40px;
+            font-weight: bold;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .modal-btn {
+            padding: 12px 35px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .modal-btn.yes {
+            background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .modal-btn.yes:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.6);
+        }
+
+        .modal-btn.no {
+            background: linear-gradient(135deg, #666, #888);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 102, 102, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn.no:hover:not(.hidden) {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(102, 102, 102, 0.6);
+        }
+
+        .modal-btn.hidden {
+            display: none;
+        }
+
+        /* 祝福语小弹窗样式 */
+        .blessing-popup {
+            position: fixed;
+            background: linear-gradient(135deg, rgba(45, 45, 45, 0.95), rgba(26, 26, 26, 0.95));
+            padding: 20px 25px;
+            border-radius: 15px;
+            border: 2px solid #ff6b6b;
+            box-shadow: 0 5px 25px rgba(255, 107, 107, 0.3);
+            z-index: 200;
+            animation: popIn 0.4s ease, float 3s ease-in-out infinite;
+            max-width: 250px;
+        }
+
+        @keyframes popIn {
+            0% {
+                transform: scale(0) rotate(0deg);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.2) rotate(5deg);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .blessing-text {
+            font-size: 16px;
+            color: #fff;
+            font-weight: bold;
+            line-height: 1.5;
+            text-align: center;
+        }
+
+        .blessing-close {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 24px;
+            height: 24px;
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .blessing-close:hover {
+            background: #ff4444;
+            transform: rotate(90deg);
+        }
+
+        .heart-beating {
+            animation: fastHeartbeat 0.3s ease-in-out infinite !important;
+        }
+
+        @keyframes fastHeartbeat {
+            0%, 100% {
+                transform: translate(-50%, -50%) scale(1.3);
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div class="text-container">
+        <div class="glow"></div>
+        <div class="heart-text">胡静恬！我有话和你说！！</div>
+    </div>
+
+    <button class="click-button" id="clickBtn">点我</button>
+
+    <!-- 主弹窗 -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-content">
+            <div class="modal-text">不管什么时候都好好爱自己！</div>
+            <div class="modal-buttons">
+                <button class="modal-btn yes" id="yesBtn">记住啦！</button>
+                <button class="modal-btn no" id="noBtn">没有！</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        // 粒子配置
+        const particles = [];
+        const particleCount = 400;
+
+        // 鼠标位置
+        let mouseX = width / 2;
+        let mouseY = height / 2;
+        let isMouseMoving = false;
+        let lastMouseMoveTime = 0;
+
+        // 爱心快速跳动控制
+        let isHeartBeatingFast = false;
+
+        // 文本集
+        const textSequence = [
+            '少抽烟 ',
+            '天天开心',
+            '不管怎么样都要好好的生活',
+            '别一天想些有的没的',
+            '不管最后怎么样 遇到心事可以随时和我说！'
+        ];
+        let currentTextIndex = 0;
+
+        // 祝福语集
+        const blessings = [
+            '要天天开心！',
+            '健康幸福最重要~',
+            '三妹是天下最可爱的人！！',
+            '愿三妹的每一天都充满阳光',
+            '三妹是宇宙中独一无二的光',
+            '愿你我永远沉浸在爱河之中',
+            '你的笑容是世间最美的风景',
+            '前路皆坦途，所愿皆可达',
+            '愿你被岁月温柔珍藏',
+            '你的存在本身就是礼物',
+            '日子常暖，生活常甜',
+            '愿三妹的世界永远明朗可爱',
+            '你是生活馈赠的惊喜',
+            '所有的美好都在向妮妮奔来',
+            '一生平安，岁岁年年',
+            '愿时光温柔待你',
+            '世间美好与你环环相扣',
+            '三妹是最棒的！',
+            '相信自己，未来可期',
+            '愿你被世界温柔以待',
+            '最喜欢看三妹笑的样子了',
+            '三妹眼里永远有星光',
+            '你是春天里最温柔的风',
+            '健康快乐，永远年轻',
+            '日子平凡，但因你而闪光',
+            '每一步都走向繁花似锦',
+            '三妹的温暖能治愈世界',
+            '愿你的梦想都能实现',
+            '平凡日子，非凡快乐',
+            '心中有光，脚下有路',
+            '每个明天都比今天更灿烂',
+            '你的坚持终将美好',
+            '愿生活处处有惊喜',
+            '你是最珍贵的存在！',
+            '你是世界上最值得被爱的人',
+            '日子平凡，但因你而闪光',
+            '愿所有的等待都不被辜负',
+            '你值得世间所有的祝福',
+            '要和三妹一起去厦门玩！',
+            '我们要一起去成都看熊猫！',
+            '长白山一定要一起去！',
+            '大唐不夜城也想去',
+            '祝三妹生日快乐！',
+            '三妹是夜空中最亮的星',
+            '是我雨后的彩虹',
+            '是天下第一可爱！',
+            '大海和海景房必不可少',
+            '想跟你一起放烟火打雪仗嘿嘿',
+            '开心！开心！开心！',
+            '重要的事情说三遍！！！'
+        ];
+
+        // "否"按钮文本集
+        const noButtonTexts = [
+            '你干嘛！！？',
+            '不许再点没有啦！',
+            '真的别点啦！',
+            '求求你点记住啦吧！',
+            '你真的忍心吗？',
+            '快点记住啦！'
+        ];
+        let currentNoTextIndex = 0;
+
+        // 按钮、弹窗元素
+        const clickBtn = document.getElementById('clickBtn');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const modalText = document.querySelector('.modal-text');
+        const yesBtn = document.getElementById('yesBtn');
+        const noBtn = document.getElementById('noBtn');
+        const heartText = document.querySelector('.heart-text');
+
+        // 心形函数
+        function heartShape(t) {
+            const x = 16 * Math.pow(Math.sin(t), 3);
+            const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+            return { x, y };
+        }
+
+        // 粒子类
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                const angle = Math.random() * Math.PI * 2;
+                const point = heartShape(angle);
+                
+                // 缩放心形
+                const scale = Math.min(width, height) / 50;
+                this.originX = point.x * scale + width / 2;
+                this.originY = point.y * scale + height / 2;
+                
+                this.x = this.originX;
+                this.y = this.originY;
+                
+                // 随机偏移，让心形看起来更自然
+                const randomOffset = Math.random() * 30 - 15;
+                this.x += randomOffset;
+                this.y += randomOffset;
+                
+                this.size = Math.random() * 3 + 1;
+                this.speed = Math.random() * 0.02 + 0.01;
+                this.alpha = Math.random() * 0.5 + 0.5;
+                
+                // 漂移相关
+                this.driftX = 0;
+                this.driftY = 0;
+                this.driftSpeed = 0.1;
+                this.returnSpeed = 0.05;
+                
+                // 颜色 - 粉色系
+                const hue = Math.random() * 30 + 330; // 330-360 (粉色范围)
+                const saturation = Math.random() * 30 + 70;
+                const lightness = Math.random() * 20 + 60;
+                this.color = `hsla(${hue}, ${saturation}%, ${lightness}%, ${this.alpha})`;
+            }
+
+            update(time) {
+                // 心跳效果 - 如果快速跳动则加快速度和幅度
+                const heartSpeed = isHeartBeatingFast ? 8 : 3;
+                const pulseAmplitude = isHeartBeatingFast ? 0.15 : 0.05;
+                const pulse = 1 + Math.sin(time * heartSpeed) * pulseAmplitude;
+                const offsetX = (this.originX - width / 2) * pulse + width / 2;
+                const offsetY = (this.originY - height / 2) * pulse + height / 2;
+
+                // 计算鼠标对粒子的影响
+                const dx = mouseX - this.x;
+                const dy = mouseY - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const influenceRadius = 150;
+
+                if (isMouseMoving && distance < influenceRadius) {
+                    const force = (influenceRadius - distance) / influenceRadius;
+                    this.driftX -= (dx / distance) * force * 5;
+                    this.driftY -= (dy / distance) * force * 5;
+                }
+
+                // 应用漂移
+                this.x += this.driftX;
+                this.y += this.driftY;
+
+                // 漂移衰减
+                this.driftX *= 0.95;
+                this.driftY *= 0.95;
+
+                // 回到原位
+                const returnDx = offsetX - this.x;
+                const returnDy = offsetY - this.y;
+                this.x += returnDx * this.returnSpeed;
+                this.y += returnDy * this.returnSpeed;
+
+                // 轻微随机漂移
+                this.x += Math.sin(time * 2 + this.originY * 0.01) * 0.5;
+                this.y += Math.cos(time * 2 + this.originX * 0.01) * 0.5;
+
+                // 随机闪烁
+                if (Math.random() < 0.01) {
+                    this.alpha = Math.random() * 0.5 + 0.5;
+                }
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = this.color.replace(/[\d.]+\)$/, `${this.alpha})`);
+                ctx.fill();
+
+                // 添加发光效果
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = this.color;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        // 初始化粒子
+        function initParticles() {
+            particles.length = 0;
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        // 鼠标移动事件
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            isMouseMoving = true;
+            lastMouseMoveTime = Date.now();
+        });
+
+        // 检测鼠标是否停止移动
+        setInterval(() => {
+            if (Date.now() - lastMouseMoveTime > 100) {
+                isMouseMoving = false;
+            }
+        }, 100);
+
+        // 窗口大小调整
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            initParticles();
+        });
+
+        // 点我按钮点击事件
+        clickBtn.addEventListener('click', () => {
+            if (currentTextIndex < textSequence.length) {
+                // 添加切换动画类
+                heartText.classList.add('switching');
+                
+                // 在动画进行到一半时（300ms）更换文本
+                setTimeout(() => {
+                    heartText.textContent = textSequence[currentTextIndex];
+                    currentTextIndex++;
+                }, 300);
+                
+                // 动画结束后移除切换类
+                setTimeout(() => {
+                    heartText.classList.remove('switching');
+                }, 600);
+            } else {
+                // 文本序列已遍历完成，显示弹窗
+                modalOverlay.style.display = 'flex';
+                // 重置按钮大小
+                noBtn.style.transform = 'scale(1)';
+                yesBtn.style.transform = 'scale(1)';
+                noBtn.style.opacity = '1';
+                yesBtn.style.opacity = '1';
+                // 重置否按钮文本索引
+                currentNoTextIndex = 0;
+            }
+        });
+
+        // 否按钮点击事件
+        let noClickCount = 0;
+        noBtn.addEventListener('click', () => {
+            noClickCount++;
+            
+            // 切换modal文本
+            if (currentNoTextIndex < noButtonTexts.length) {
+                modalText.textContent = noButtonTexts[currentNoTextIndex];
+                currentNoTextIndex++;
+            }
+            
+            // 否按钮变小，是按钮变大
+            const noScale = Math.max(0.2, 1 - noClickCount * 0.15);
+            const yesScale = 1 + noClickCount * 0.2;
+            
+            noBtn.style.transform = `scale(${noScale})`;
+            yesBtn.style.transform = `scale(${yesScale})`;
+            
+            // 如果否按钮太小了，隐藏它
+            if (noScale <= 0.2) {
+                noBtn.classList.add('hidden');
+            }
+        });
+
+        // 是按钮点击事件
+        yesBtn.addEventListener('click', () => {
+            // 隐藏主弹窗
+            modalOverlay.style.display = 'none';
+            
+            // 隐藏点我按钮
+            clickBtn.style.display = 'none';
+            
+            // 爱心开始快速跳动（仅粒子和光晕，文字保持原有节奏）
+            const glow = document.querySelector('.glow');
+            glow.classList.add('heart-beating');
+            isHeartBeatingFast = true;
+            
+            // 逐个弹出祝福语弹窗
+            let delay = 500;
+            blessings.forEach((blessing, index) => {
+                if (index < 50) { // 最多弹出50个
+                    setTimeout(() => {
+                        createBlessingPopup(blessing);
+                    }, delay);
+                    delay += 200; // 每个弹窗间隔200ms
+                }
+            });
+        });
+
+        // 创建祝福语弹窗
+        function createBlessingPopup(text) {
+            const popup = document.createElement('div');
+            popup.className = 'blessing-popup';
+            
+            // 随机位置（确保在屏幕内）
+            const maxX = width - 300;
+            const maxY = height - 150;
+            const randomX = Math.random() * maxX + 20;
+            const randomY = Math.random() * maxY + 20;
+            
+            popup.style.left = `${randomX}px`;
+            popup.style.top = `${randomY}px`;
+            
+            // 添加文本
+            const textElement = document.createElement('div');
+            textElement.className = 'blessing-text';
+            textElement.textContent = text;
+            popup.appendChild(textElement);
+            
+            // 添加关闭按钮
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'blessing-close';
+            closeBtn.textContent = '×';
+            closeBtn.addEventListener('click', () => {
+                popup.style.animation = 'scaleOut 0.3s ease';
+                setTimeout(() => {
+                    popup.remove();
+                }, 300);
+            });
+            popup.appendChild(closeBtn);
+            
+            // 添加到页面
+            document.body.appendChild(popup);
+            
+            // 10秒后自动关闭
+            setTimeout(() => {
+                if (popup.parentNode) {
+                    popup.style.animation = 'scaleOut 0.3s ease';
+                    setTimeout(() => {
+                        popup.remove();
+                    }, 300);
+                }
+            }, 10000);
+        }
+
+        // 添加弹窗消失动画
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes scaleOut {
+                to {
+                    transform: scale(0);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // 动画循环
+        function animate() {
+            // 清除画布，使用半透明黑色创建拖尾效果
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, width, height);
+
+            const time = Date.now() / 1000;
+
+            // 更新和绘制粒子
+            particles.forEach(particle => {
+                particle.update(time);
+                particle.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        // 启动
+        initParticles();
+        animate();
+    </script>
+</body>
+</html>
